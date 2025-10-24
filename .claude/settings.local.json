@@ -4,7 +4,19 @@
       "WebSearch",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npm run dev:full:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(pkill:*)",
+      "Bash(awk:*)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

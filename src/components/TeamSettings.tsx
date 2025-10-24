@@ -1,4 +1,8 @@
 
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+
 interface TeamSettingsProps {
   blueCount: number;
   redCount: number;
@@ -29,32 +33,47 @@ const TeamSettings: React.FC<TeamSettingsProps> = ({
   };
 
   return (
-    <div className="team-settings">
-      <div className="control-group">
-        <label htmlFor="blue-count">蓝队:</label>
-        <input
-          id="blue-count"
-          type="number"
-          min="0"
-          max="50"
-          value={blueCount}
-          onChange={handleBlueCountChange}
-        />
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="blue-count" className="text-blue-600 font-semibold flex items-center space-x-2">
+            <span>💙</span>
+            <span>蓝队可选英雄</span>
+          </Label>
+          <Input
+            id="blue-count"
+            type="number"
+            min="0"
+            max="50"
+            value={blueCount}
+            onChange={handleBlueCountChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="red-count" className="text-red-600 font-semibold flex items-center space-x-2">
+            <span>❤️</span>
+            <span>红队可选英雄</span>
+          </Label>
+          <Input
+            id="red-count"
+            type="number"
+            min="0"
+            max="50"
+            value={redCount}
+            onChange={handleRedCountChange}
+          />
+        </div>
       </div>
-      <div className="control-group">
-        <label htmlFor="red-count">红队:</label>
-        <input
-          id="red-count"
-          type="number"
-          min="0"
-          max="50"
-          value={redCount}
-          onChange={handleRedCountChange}
-        />
-      </div>
-      <button onClick={onRandomize} className="random-btn">
-        开始随机
-      </button>
+      <Button
+        onClick={onRandomize}
+        className="w-full"
+        size="lg"
+      >
+        <span className="flex items-center space-x-2">
+          <span>🎲</span>
+          <span>开始随机</span>
+        </span>
+      </Button>
     </div>
   );
 };

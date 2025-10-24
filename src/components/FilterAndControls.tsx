@@ -1,6 +1,10 @@
 import { HeroRole } from '../types/hero';
 import { ROLE_LABELS } from '../types/hero';
 import TeamSettings from './TeamSettings';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface FilterAndControlsProps {
   selectedRole: HeroRole | 'all';
@@ -44,60 +48,106 @@ const FilterAndControls: React.FC<FilterAndControlsProps> = ({
     return ROLE_LABELS[role];
   };
 
+  const getRoleEmoji = (role: HeroRole | 'all'): string => {
+    const roleEmojis: Record<HeroRole | 'all', string> = {
+      all: '🎯',
+      fighter: '⚔️',
+      mage: '🔮',
+      assassin: '🗡️',
+      tank: '🛡️',
+      marksman: '🏹',
+      support: '💚'
+    };
+    return roleEmojis[role];
+  };
+
   return (
-    <div className="card">
-      <div className="filter-controls-layout">
-        <div className="filter-section">
-          <h3>英雄筛选</h3>
-          <div className="role-options">
-            {roleOptions.map((role) => (
-              <label key={role} className="radio-label">
-                <input
-                  type="radio"
-                  name="role"
-                  value={role}
-                  checked={selectedRole === role}
-                  onChange={() => onRoleChange(role)}
-                />
-                <span className="radio-text">{getRoleLabel(role)}</span>
-              </label>
-            ))}
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl font-bold flex items-center space-x-3">
+          <span>⚙️</span>
+          <span>游戏控制面板</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* 英雄筛选区域 */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-4 flex items-center space-x-2">
+              <span>🎭</span>
+              <span>英雄筛选</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {roleOptions.map((role) => (
+                <Button
+                  key={role}
+                  variant={selectedRole === role ? "default" : "outline"}
+                  onClick={() => onRoleChange(role)}
+                  className="flex items-center space-x-2"
+                >
+                  <span>{getRoleEmoji(role)}</span>
+                  <span className="text-sm">{getRoleLabel(role)}</span>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="balance-section">
-            <h3>随机选项</h3>
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
+        {/* 随机选项 */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-4 flex items-center space-x-2">
+              <span>🎲</span>
+              <span>随机选项</span>
+            </h3>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="balance"
                 checked={balanceByRole}
-                onChange={(e) => onBalanceToggle(e.target.checked)}
+                onCheckedChange={onBalanceToggle}
               />
-              <span className="checkbox-text">根据位置随机</span>
-            </label>
-            <p className="balance-hint">
-              开启后，在随机20个英雄时会尽可能确保每个位置都有英雄代表
+              <Label htmlFor="balance" className="cursor-pointer">
+                根据位置平衡随机
+              </Label>
+            </div>
+            <p className="text-muted-foreground text-sm mt-2 ml-6">
+              开启后，系统会确保每个位置都有合理的英雄代表
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="controls-section">
-          <h3>队伍设置</h3>
-          <TeamSettings
-            blueCount={blueCount}
-            redCount={redCount}
-            onBlueCountChange={onBlueCountChange}
-            onRedCountChange={onRedCountChange}
-            onRandomize={onRandomize}
-          />
+        {/* 队伍设置 */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-4 flex items-center space-x-2">
+              <span>⚔️</span>
+              <span>队伍设置</span>
+            </h3>
+            <TeamSettings
+              blueCount={blueCount}
+              redCount={redCount}
+              onBlueCountChange={onBlueCountChange}
+              onRedCountChange={onRedCountChange}
+              onRandomize={onRandomize}
+            />
+          </CardContent>
+        </Card>
 
-          {showRerandomize && (
-            <button onClick={onRerandomize} className="rerandom-btn">
-              重新随机
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+        {/* 重新随机按钮 */}
+        {showRerandomize && (
+          <Button
+            onClick={onRerandomize}
+            className="w-full"
+            variant="secondary"
+          >
+            <span className="flex items-center space-x-2">
+              <span>🔄</span>
+              <span>重新随机</span>
+            </span>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
