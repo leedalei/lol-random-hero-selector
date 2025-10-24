@@ -1,0 +1,219 @@
+name: 🚀 Deploy to Production Server
+
+on:
+  push:
+    branches: [ main, deploy ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  # 构建和测试前端
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 📦 设置Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 🔧 安装依赖
+        run: npm ci
+
+      - name: ✅ 运行类型检查
+        run: npm run build
+
+      - name: 🏗️ 构建前端
+        run: npm run build
+
+      - name: 📦 构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+      - name: 📦 上传后端代码
+        uses: actions/upload-artifact@v4
+        with:
+          name: server
+          path: server/
+          retention-days: 1
+
+  # 部署到服务器
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success() # 只有构建成功才部署
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 📦 下载构建产物
+        uses: actions/download-artifact@v4
+
+      - name: 🔐 准备SSH密钥
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 🚀 部署到服务器
+        run: |
+          echo "🌍 开始部署到服务器..."
+          echo "服务器地址: ${{ secrets.SERVER_HOST }}"
+          echo "部署路径: ${{ secrets.DEPLOY_PATH }}"
+
+          # 创建备份目录
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            mkdir -p ${{ secrets.DEPLOY_PATH }}/backups
+            mkdir -p ${{ secrets.DEPLOY_PATH }}/logs
+          "
+
+          # 备份当前版本
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            if [ -d '${{ secrets.DEPLOY_PATH }}/dist' ]; then
+              cp -r ${{ secrets.DEPLOY_PATH }}/dist ${{ secrets.DEPLOY_PATH }}/backups/dist-$(date +%Y%m%d-%H%M%S)
+            fi
+            if [ -d '${{ secrets.DEPLOY_PATH }}/server' ]; then
+              cp -r ${{ secrets.DEPLOY_PATH }}/server ${{ secrets.DEPLOY_PATH }}/backups/server-$(date +%Y%m%d-%H%M%S)
+            fi
+          "
+
+          # 同步文件到服务器
+          rsync -avz --delete \
+            dist/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.DEPLOY_PATH }}/dist/
+
+          rsync -avz --delete \
+            server/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.DEPLOY_PATH }}/server/
+
+          # 在服务器上执行部署脚本
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # 安装后端依赖
+            cd server
+            npm ci --production
+
+            # 停止旧服务
+            if pgrep -f 'node.*index.js' > /dev/null; then
+              pkill -f 'node.*index.js'
+              echo '已停止旧服务'
+              sleep 3
+            fi
+
+            # 启动新服务
+            cd ..
+            nohup npm run start:server > logs/server.log 2>&1 &
+            echo $! > server.pid
+
+            echo '✅ 后端服务启动完成'
+
+            # 检查服务状态
+            sleep 5
+            if curl -s http://localhost:3010/health > /dev/null; then
+              echo '✅ 后端服务运行正常'
+            else
+              echo '❌ 后端服务启动失败'
+              exit 1
+            fi
+          "
+
+      - name: 🎉 部署成功通知
+        run: |
+          echo "🎉 部署成功！"
+          echo "🌐 前端地址: https://${{ secrets.SERVER_DOMAIN }}"
+          echo "🔧 后端地址: https://${{ secrets.SERVER_DOMAIN }}/health"
+          echo "📊 查看日志: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'tail -f ${{ secrets.DEPLOY_PATH }}/logs/server.log'"
+
+  # 健康检查
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: 🏥 健康检查
+        run: |
+          echo "🔍 执行健康检查..."
+
+          # 检查前端
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.SERVER_DOMAIN }})
+          if [ "$FRONTEND_STATUS" = "200" ]; then
+            echo "✅ 前端健康检查通过"
+          else
+            echo "❌ 前端健康检查失败 (状态码: $FRONTEND_STATUS)"
+            exit 1
+          fi
+
+          # 检查后端
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ secrets.SERVER_DOMAIN }}/health)
+          if [ "$BACKEND_STATUS" = "200" ]; then
+            echo "✅ 后端健康检查通过"
+          else
+            echo "❌ 后端健康检查失败 (状态码: $BACKEND_STATUS)"
+            exit 1
+          fi
+
+          echo "🎉 所有服务健康检查通过！"
+
+  # 回滚作业 (可选)
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure() && needs.deploy.result == 'failure'
+    needs: deploy
+
+    steps:
+      - name: 🔐 准备SSH密钥
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 🔄 回滚到上一版本
+        run: |
+          echo "🔄 执行回滚操作..."
+
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # 恢复最新备份
+            LATEST_BACKUP=\$(ls -t backups/ | head -1)
+            echo "回滚到: \$LATEST_BACKUP"
+
+            case \$LATEST_BACKUP in
+              dist-*)
+                rm -rf dist
+                tar -xzf "backups/\$LATEST_BACKUP.tar.gz" 2>/dev/null || \
+                cp -r "backups/\$LATEST_BACKUP" dist/ 2>/dev/null || \
+                echo "回滚dist失败"
+                ;;
+              server-*)
+                rm -rf server
+                cp -r "backups/\$LATEST_BACKUP" server/ 2>/dev/null || \
+                echo "回滚server失败"
+                ;;
+            esac
+
+            # 重启服务
+            if pgrep -f 'node.*index.js' > /dev/null; then
+              pkill -f 'node.*index.js'
+              sleep 3
+            fi
+
+            cd server
+            npm ci --production
+            cd ..
+            nohup npm run start:server > logs/server.log 2>&1 &
+            echo $! > server.pid
+
+            echo '✅ 回滚完成'
+          "

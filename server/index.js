@@ -12,18 +12,18 @@ const server = createServer(app)
 const isDevelopment = process.env.NODE_ENV !== 'production'
 app.use(cors({
   origin: isDevelopment
-    ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173']
-    : ['https://your-domain.vercel.app'],
-  methods: ['GET', 'POST'],
+    ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3007', 'http://localhost:4173']
+    : ['https://*.vercel.app', 'https://vercel.app'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
 }))
 
 const io = new Server(server, {
   cors: {
     origin: isDevelopment
-      ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173']
-      : ['https://your-domain.vercel.app'],
-    methods: ['GET', 'POST'],
+      ? ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3007', 'http://localhost:4173']
+      : ['https://*.vercel.app', 'https://vercel.app'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
   },
   transports: ['websocket', 'polling']

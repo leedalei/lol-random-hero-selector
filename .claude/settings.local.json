@@ -16,7 +16,8 @@
       "Bash(awk:*)",
       "Bash(npm run lint)",
       "Bash(npx tsc:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

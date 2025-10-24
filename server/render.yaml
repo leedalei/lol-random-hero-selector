@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: lol-hero-selector-server
+    runtime: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    healthCheckPath: /health
+    ports:
+      - 3010
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3010
+    region: oregon  # 选择一个离你较近的区域

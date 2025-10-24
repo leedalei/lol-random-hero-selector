@@ -8,10 +8,11 @@ class SocketService {
   connect() {
     if (this.socket?.connected) return
 
-    // 注意：这里使用本地开发服务器，部署时需要改为实际的服务器地址
-    const serverUrl = import.meta.env.PROD
-      ? 'wss://your-server-url.com'
-      : 'ws://localhost:3010'
+    // 根据环境自动选择服务器地址
+  const serverUrl = import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD
+      ? 'wss://your-backend.onrender.com'  // 生产环境默认值，需要在Vercel中设置环境变量
+      : 'ws://localhost:3010')          // 开发环境
 
     this.socket = io(serverUrl, {
       transports: ['websocket'],

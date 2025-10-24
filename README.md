@@ -2,6 +2,61 @@
 
 一个支持在线联机的LOL随机英雄选择器，允许两名玩家实时对战。
 
+## 🚀 快速部署
+
+### 🏠 方案1: 自服务器一键部署 ⭐ (推荐)
+
+**成本**: 5-10美元/月 | **控制权**: 完全 | **性能**: 高
+
+1. **准备服务器**:
+   - 购买VPS (Vultr/DigitalOcean等)
+   - Ubuntu 20.04+ 系统
+   - 最低配置: 1CPU 1GB 25GB SSD
+
+2. **自动化部署**:
+```bash
+# 克隆仓库
+git clone https://github.com/your-username/lol-random-hero-selector.git
+cd lol-random-hero-selector
+
+# 配置服务器环境
+cp .env.example .env
+nano .env  # 填入服务器信息
+
+# 一键初始化服务器
+./scripts/deploy.sh init
+
+# 推送代码触发自动部署
+git push origin main
+```
+
+📖 详细指南: [GitHub Actions部署](./docs/GITHUB_ACTIONS_SETUP.md)
+
+### 📦 方案2: 免费平台部署
+
+**成本**: 免费 | **控制权**: 有限 | **性能**: 基础
+
+1. **Fork本仓库**到你的GitHub
+2. **部署前端到Vercel**:
+   - 访问 [vercel.com](https://vercel.com)
+   - 导入GitHub仓库
+   - Vercel自动构建前端
+3. **部署后端到Render**:
+   - 访问 [render.com](https://render.com)
+   - 导入GitHub仓库
+   - 选择`server`文件夹作为根目录
+   - 配置启动命令: `npm start`
+4. **设置环境变量**:
+   - Vercel项目中设置: `VITE_API_URL=https://your-backend.onrender.com`
+
+### 📋 部署前检查
+
+```bash
+node deploy-check.js
+```
+
+📖 详细部署指南请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## 🎮 功能特性
 
 ### 在线联机模式
